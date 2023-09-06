@@ -3,6 +3,7 @@ FROM ubuntu:22.04
 COPY main.py .
 COPY db.py .
 COPY requirements.txt .
+COPY index.html .
 RUN touch db.sqlite
 RUN apt-get update -y
 RUN apt-get upgrade -y
