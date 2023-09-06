@@ -3,29 +3,36 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.requests import Request
 from fastapi.templating import Jinja2Templates
 
-
 from typing import Annotated
+from hashlib import sha256
+
+from db import sqliteDB
 
 
 template = Jinja2Templates('.')
-
+db = sqliteDB()
 app = FastAPI()
 
 
 @app.get('/')
-def index(request: Request, paste_code: str = None):
+async def index(request: Request, paste_code: str = None):
     if not paste_code:
-        return template.TemplateResponse('index.html', {'request': request})
-    ...
+        return template.TemplateResponse('index.html', {"value": '', 'request': request})
+    else:
+        content = db.get_paste(contenthash=paste_code)
+        return template.TemplateResponse('index.html', {"value": content, 'request': request})
+
 
 @app.post('/')
-def create_paste(content: Annotated[str, Form()]):
-    with open('asd', 'w') as file:
-        print(content, file=file)
+async def create_paste(content: Annotated[str, Form()]):
+    contenthash = sha256(content.encode())
+    if db.add_paste(contenthash=contenthash.hexdigest(), content=content):
+        return RedirectResponse(f'/?paste_code={contenthash.hexdigest()}', status_code=302)
+    return False
 
 
 if __name__ == '__main__':
     import uvicorn
 
 
-    uvicorn.run('main:app', reload=True)
+    uvicorn.run('main:app')
